@@ -7,7 +7,7 @@ import (
 
 const (
 	minRTO               = 100 * time.Millisecond
-	maxRTO               = 60 * time.Second
+	maxRTX               = 10
 	nSkippedAckThreshold = 2
 )
 
@@ -60,8 +60,7 @@ func (s *sender) sendData() {
 			seg.flags |= flagFin
 		}
 
-		seg.rto = s.rto
-		seg.resendAt = now.Add(seg.rto)
+		seg.resendAt = now.Add(s.rto)
 		s.sendSegment(seg)
 		element = element.Next()
 	}
@@ -199,8 +198,7 @@ func (s *sender) fastRetransmit(end seqnum) {
 		seg := element.Value.(*segment)
 
 		if seg.num.lessThan(end) && seg.fastAck >= nSkippedAckThreshold && !seg.fr {
-			seg.rto = s.rto
-			seg.resendAt = now.Add(seg.rto)
+			seg.resendAt = now.Add(s.rto)
 			s.sendSegment(seg)
 			seg.fr = true
 			continue
@@ -223,11 +221,11 @@ func (s *sender) retransmit() bool {
 		}
 
 		if seg.resendAt.Before(now) {
-			if seg.rto >= maxRTO {
+			if seg.rtx >= maxRTX {
 				return false
 			}
 
-			seg.rto *= 2
+			seg.rtx++
 			seg.resendAt = now.Add(s.rto)
 			s.sendSegment(seg)
 		}

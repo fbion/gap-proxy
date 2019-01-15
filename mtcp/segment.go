@@ -35,7 +35,7 @@ type segment struct {
 
 	raw      []byte
 	fastAck  int
-	rto      time.Duration
+	rtx      int
 	resendAt time.Time
 	fr       bool
 }
