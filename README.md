@@ -100,10 +100,3 @@ $ gap wnd 512
 * [go-daemon](https://github.com/sevlyar/go-daemon)
 * [v2ray-core](https://github.com/v2ray/v2ray-core)
 * [quic-go](https://github.com/lucas-clemente/quic-go)
-
-# 捐助
-本人目前无任何经济收入，如果你喜欢 gap-proxy，希望你捐助支持开发、完善、优化。哪怕只有一毛钱，也是极大的鼓励，多谢！ ：）
-
-| 支付宝 | 微信 |
-|---|---|
-| ![](./Alipay.png) | ![](./Wechat.png) |
