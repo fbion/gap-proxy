@@ -115,7 +115,7 @@ func (s *sender) sendSegment(seg *segment) error {
 
 func (s *sender) acceptable(seg *segment) bool {
 	current := s.ep.timestamp()
-	if seg.tsEcr > current {
+	if seg.tsEcr > current && s.ep.tsRecent == 0 {
 		return false
 	}
 	return true

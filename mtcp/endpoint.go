@@ -662,12 +662,27 @@ func (e *endpoint) deliverSegment(seg *segment) {
 	}
 }
 
+func (e *endpoint) pawsCheck(seg *segment) bool {
+	const pawsWnd = 1 // Replay window for per-host timestamps
+
+	if int32(e.tsRecent-seg.tsVal) <= pawsWnd {
+		return true
+	}
+
+	return false
+}
+
 func (e *endpoint) handleSegments() (err error) {
 	for i := 0; i < maxSegmentsPerWake; i++ {
 		var seg *segment
 
 		if seg = e.segmentQueue.dequeue(); seg == nil {
 			break
+		}
+
+		if !e.pawsCheck(seg) {
+			seg.free()
+			continue
 		}
 
 		if seg.flagIsSet(flagRst) && e.rcv.acceptable(seg.num, 0) {
