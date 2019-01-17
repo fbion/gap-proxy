@@ -92,5 +92,5 @@ $ gap-proxy wnd 512
 * [v2ray-core](https://github.com/v2ray/v2ray-core)
 * [quic-go](https://github.com/lucas-clemente/quic-go)
 
-# 许可
+# 许可证
 MIT
