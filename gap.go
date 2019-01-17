@@ -14,8 +14,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	// version is injected by buildflags
+	version = "SELFBUILD"
+)
+
 const (
-	version    = "0.0.1"
 	configDir  = ".gap-proxy"
 	configFile = "config.json"
 )
