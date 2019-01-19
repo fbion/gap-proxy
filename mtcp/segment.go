@@ -100,7 +100,7 @@ func (s *segment) flagIsSet(v uint8) bool {
 
 func (s *segment) logicalSize() int {
 	l := s.dataSize()
-	if s.flagIsSet(flagFin) {
+	if s.flagIsSet(flagFin) || s.flagIsSet(flagCnt) {
 		l += 1
 	}
 	return l
