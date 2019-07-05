@@ -18,59 +18,29 @@ gap-proxy 仅支持 macOS, Linux, 其他类 Unix 理论上支持，但并未测�
 
 # 安装
 
-**提示：为了简单，如下操作在个人电脑，服务器上可都一样。**
-
 #### 下载
-根据所使用的操作系统从 [releases](https://github.com/fanpei91/gap-proxy/releases/) 下载相应已编译好的二进制文件压缩包。
-
-#### 安装
-首先在用户家目录新建 `.gap-proxy` 目录，接着在此目录里创建 `config.json` 配置文件，最后配置相关参数。举例：
-
-```
-$ vim ~/.gap-proxy/config.json
-
-{
-	"local":  "127.0.0.1:1186", # 客户端监听地址 (SOCKS5)
-	"server": "8.8.8.8:2286",   # 服务器端监听地址
-	"key":    "gap-proxy"       # 密钥
-}
-```
+根据所使用的操作系统从 [releases](https://github.com/fanpei91/gap-proxy/releases/) 下载相应已编译好的 `gap-local` 和 `gap-server` 二进制文件压缩包。
 
 # 基本使用
-#### 启动
-一旦安装并配置好后，在个人电脑系统上执行：
+
+#### gap-local
 
 ```
-$ gap-proxy local start
+$ gap-local --local-addr "127.0.0.1:1086" --server-addr "8.8.8.8:1086" --key "key"
 ```
 
-然后在服务器上执行：
+
+#### gap-server
 
 ```
-$ gap-proxy server start
+$ gap-server --server-addr "8.8.8.8:1086" --key "key"
 ```
 
-这样便分别启动了 `gap-local` 和 `gap-server` 后台进程。
+完毕！
 
 #### 代理
-gap-proxy 只是个简单的 SOCKS5 代理，如果日常上网需要智能代理，可自己在浏览器安装代理管理插件，插件的 SOCKS5 地址填写为配置文件的 `local` 字段的地址。
+gap-local 只是个简单的 SOCKS5 代理，如果日常上网需要智能代理，可自己在浏览器安装代理管理插件，插件的 SOCKS5 地址填写为配置文件的 `--local-addr` 参数的地址。
 
-# 流量控制
-gap-proxy 的默认接收窗口为 256 个包，每个包最多能装 1420 字节数据，假设数据包传输每轮次需要 300 毫秒（RTT），一秒就有 3.3 个轮次，那么每秒最多能传输 256 * 1420 * 3.3 / 1024 = 1171 KB 有效数据。
-
-默认值 256 基本上能流畅观看 720p 的 youtube 视频，如果看更高清的视频会卡顿，只要带宽允许，可把接收窗口值逐渐调大：
-
-```
-$ gap-proxy wnd 512
-```
-
-这样便把当前所有连接、新连接的接收窗口都设为 512 个包。跟 TCP 协议一样，`gap-server` 就能通过 `ack` 包的 `Window` 字段知道新发送窗口值。
-
-现在每秒最多能传输 2343 KB 有效数据。
-
-# 待办事项
-* FEC（前向纠错）
-* [Proxifier](https://www.proxifier.com/) / [ProxyCap](http://www.proxycap.com/) 的核心功能，强制代理不支持 SOCKS5 协议的程序
 
 # 感谢及参考
 * [netstack](https://github.com/google/netstack)

@@ -1,4 +1,4 @@
-package main
+package gapproxy
 
 import (
 	"io"
@@ -10,14 +10,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func newServer(listenAddr string, key string) *server {
+func NewServer(listenAddr string, key string) *server {
 	return &server{
 		key:        key,
 		listenAddr: listenAddr,
 	}
 }
 
-func (r *server) listen() (err error) {
+func (r *server) Listen() (err error) {
 	var cipher *mtcp.Cipher
 	var listener *mtcp.Listener
 
@@ -53,7 +53,6 @@ func (r *server) handleConn(conn *mtcp.Conn) {
 	defer conn.Close()
 
 	if _, err := io.ReadFull(conn, buf[:1]); err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 
@@ -64,7 +63,6 @@ func (r *server) handleConn(conn *mtcp.Conn) {
 		addrEnd = addrStart + net.IPv4len + 2
 	case typeDomain:
 		if _, err := io.ReadFull(conn, buf[1:2]); err != nil {
-			printLog(errors.WithStack(err))
 			return
 		}
 		addrStart = 2
@@ -77,18 +75,15 @@ func (r *server) handleConn(conn *mtcp.Conn) {
 	}
 
 	if _, err := io.ReadFull(conn, buf[addrStart:addrEnd]); err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 	destAddr, err := parseDestAddr(buf[:addrEnd])
 	if err != nil {
-		printLog(err)
 		return
 	}
 
 	c, err := net.DialTimeout("tcp", destAddr, 3*time.Second)
 	if err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 

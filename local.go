@@ -1,4 +1,4 @@
-package main
+package gapproxy
 
 import (
 	"encoding/binary"
@@ -6,10 +6,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-
-	"sync"
-
-	"log"
 
 	"github.com/fanpei91/gap-proxy/mtcp"
 	"github.com/pkg/errors"
@@ -44,14 +40,6 @@ type server struct {
 type localProxy struct {
 	server
 	serverAddr string
-
-	mu          sync.Mutex
-	connections map[uint64]*mtcp.Conn
-	rcvWnd      uint16
-}
-
-func printLog(v interface{}) {
-	log.Printf("%+v\n", v)
 }
 
 type destAddr struct {
@@ -59,35 +47,17 @@ type destAddr struct {
 	addr string
 }
 
-func newLocalProxy(listenAddr, serverAddr string, key string) *localProxy {
+func NewLocalProxy(listenAddr, serverAddr string, key string) *localProxy {
 	return &localProxy{
 		serverAddr: serverAddr,
 		server: server{
 			key:        key,
 			listenAddr: listenAddr,
 		},
-		rcvWnd:      mtcp.DefaultRcvWnd,
-		connections: make(map[uint64]*mtcp.Conn, 0),
 	}
 }
 
-func (l *localProxy) setRcvWnd(wnd uint16) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	l.rcvWnd = wnd
-	for _, conn := range l.connections {
-		conn.SetRcvWnd(wnd)
-	}
-}
-
-func (l *localProxy) getRcvWnd() uint16 {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.rcvWnd
-}
-
-func (l *localProxy) listen() (err error) {
+func (l *localProxy) Listen() (err error) {
 	var ls net.Listener
 	if ls, err = net.Listen("tcp", l.listenAddr); err != nil {
 		err = errors.WithStack(err)
@@ -110,49 +80,32 @@ func (l *localProxy) handleConn(client *net.TCPConn) {
 	defer client.Close()
 
 	if err := l.authenticate(client); err != nil {
-		printLog(err)
 		return
 	}
 
 	destAddr, err := l.handleRequest(client)
 	if err != nil {
-		printLog(err)
 		return
 	}
 
 	reply := []byte{socks5, succeeded, rsv, ipv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	if _, err := client.Write(reply); err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 
 	cipher, err := mtcp.NewCipher([]byte(l.key))
 	if err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 
 	server, err := mtcp.Dial(l.serverAddr, cipher)
 	if err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 
-	l.mu.Lock()
-	server.SetRcvWnd(l.rcvWnd)
-	l.connections[server.ConnectionID()] = server
-	l.mu.Unlock()
-
-	defer func() {
-		l.mu.Lock()
-		delete(l.connections, server.ConnectionID())
-		l.mu.Unlock()
-
-		server.Close()
-	}()
+	defer server.Close()
 
 	if _, err := server.Write(destAddr.raw); err != nil {
-		printLog(errors.WithStack(err))
 		return
 	}
 
@@ -244,7 +197,6 @@ func pipe(dst net.Conn, src net.Conn) {
 		n, err := src.Read(buf)
 		if n > 0 {
 			if _, err := dst.Write(buf[0:n]); err != nil {
-				printLog(errors.WithStack(err))
 				break
 			}
 		}
