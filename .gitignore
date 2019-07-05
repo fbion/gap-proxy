@@ -1,7 +1,6 @@
 .idea
 releases
 build.sh
-cmd
 *.log
 *.pid
 gap
