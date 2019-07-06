@@ -37,9 +37,10 @@ type server struct {
 	listenAddr string
 }
 
-type localProxy struct {
+type LocalProxy struct {
 	server
 	serverAddr string
+	listener   net.Listener
 }
 
 type destAddr struct {
@@ -47,8 +48,8 @@ type destAddr struct {
 	addr string
 }
 
-func NewLocalProxy(listenAddr, serverAddr string, key string) *localProxy {
-	return &localProxy{
+func NewLocalProxy(listenAddr, serverAddr string, key string) *LocalProxy {
+	return &LocalProxy{
 		serverAddr: serverAddr,
 		server: server{
 			key:        key,
@@ -57,14 +58,13 @@ func NewLocalProxy(listenAddr, serverAddr string, key string) *localProxy {
 	}
 }
 
-func (l *localProxy) Listen() (err error) {
-	var ls net.Listener
-	if ls, err = net.Listen("tcp", l.listenAddr); err != nil {
+func (l *LocalProxy) Listen() (err error) {
+	if l.listener, err = net.Listen("tcp", l.listenAddr); err != nil {
 		err = errors.WithStack(err)
 		return
 	}
 
-	listener := ls.(*net.TCPListener)
+	listener := l.listener.(*net.TCPListener)
 	var client *net.TCPConn
 	for {
 		if client, err = listener.AcceptTCP(); err != nil {
@@ -75,7 +75,11 @@ func (l *localProxy) Listen() (err error) {
 	}
 }
 
-func (l *localProxy) handleConn(client *net.TCPConn) {
+func (l *LocalProxy) Stop() error {
+	return l.listener.Close()
+}
+
+func (l *LocalProxy) handleConn(client *net.TCPConn) {
 	client.SetLinger(0)
 	defer client.Close()
 
@@ -113,7 +117,7 @@ func (l *localProxy) handleConn(client *net.TCPConn) {
 	pipe(server, client)
 }
 
-func (l *localProxy) authenticate(client *net.TCPConn) error {
+func (l *LocalProxy) authenticate(client *net.TCPConn) error {
 	/*
 	   +----+----------+----------+
 	   |VER | NMETHODS | METHODS  |
@@ -146,7 +150,7 @@ func (l *localProxy) authenticate(client *net.TCPConn) error {
 	return nil
 }
 
-func (l *localProxy) handleRequest(client *net.TCPConn) (*destAddr, error) {
+func (l *LocalProxy) handleRequest(client *net.TCPConn) (*destAddr, error) {
 	/*
 	   +----+-----+-------+------+----------+----------+
 	   |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
