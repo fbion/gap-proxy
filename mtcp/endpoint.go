@@ -13,7 +13,7 @@ const (
 	MaxReceivePacketSize = 1452 // MTU(1500) - IPv6 - UDP
 	HeaderSize           = 32
 	MaxSegmentSize       = MaxReceivePacketSize - HeaderSize
-	DefaultRcvWnd        = 256
+	DefaultRcvWnd        = 4096
 )
 
 var (
